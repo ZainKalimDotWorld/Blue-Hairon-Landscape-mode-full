@@ -3,16 +3,22 @@ package com.example.myapplication;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -58,7 +64,7 @@ import static com.example.myapplication.Feedback_Menu.swToggle;
 
 //implements AdapterView.OnItemSelectedListener , DroidListener
 
-public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener , DroidListener {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener, DroidListener {
 
     private ArrayList<String> names7 = new ArrayList<String>();
 
@@ -72,6 +78,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     Spinner spLeaveSubject2;
     public ArrayList<Pojo> lstAnime = new ArrayList<Pojo>();
+
+    TelephonyManager mTelephonyManager;
+    public String IMEI;
 
 
     public ArrayList<Pojo> lstAnime2 = new ArrayList<Pojo>();
@@ -88,37 +97,38 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private DroidNet mDroidNet;
     Button signin;
     int v11;
-    static  String Portrait = "portrait";
-    static  String Landscape = "landscape";
-
-   static int orientation;
+    static String Portrait = "portrait";
+    static String Landscape = "landscape";
+    String imeiNumber;
+    static int orientation;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-         orientation = this.getResources().getConfiguration().orientation;
+        orientation = this.getResources().getConfiguration().orientation;
 
 
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            //landscape
+            setContentView(R.layout.activity_main_portrait);
 
-if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-{
-    //landscape
-    setContentView(R.layout.activity_main_portrait);
 
-    Mint.initAndStartSession(this.getApplication(), "8566b133");
-    mDroidNet = DroidNet.getInstance();
-    mDroidNet.addInternetConnectivityListener(this);
+            Mint.initAndStartSession(this.getApplication(), "8566b133");
+            mDroidNet = DroidNet.getInstance();
+            mDroidNet.addInternetConnectivityListener(this);
 
-    client = new OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).writeTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).build();
-    lstAnime = new ArrayList<>();
+            client = new OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).writeTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).build();
+            lstAnime = new ArrayList<>();
 
-    spLeaveSubject2 = (Spinner) findViewById(R.id.spLeaveSubject2);
-    customer_info = (EditText) findViewById(R.id.customer_info);
-    spLeaveSubject2.setOnItemSelectedListener(MainActivity.this);
+            spLeaveSubject2 = (Spinner) findViewById(R.id.spLeaveSubject2);
+            customer_info = (EditText) findViewById(R.id.customer_info);
+            spLeaveSubject2.setOnItemSelectedListener(MainActivity.this);
 
-    signin = (Button) findViewById(R.id.signin);
+
+            deviceId();
+            signin = (Button) findViewById(R.id.signin);
 
 //    imageView4 = (ImageView) findViewById(R.id.imageView4);
 //
@@ -161,104 +171,87 @@ if (orientation == Configuration.ORIENTATION_LANDSCAPE)
 //    });
 
 
-
-    signin.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-
-
-            loginapi_landscape();
-        }
-    });
-
-    retreivebranches2();
-
-}
-
-
-
-
-
-
-else
-{
-
-    //PORTRAIT
-    setContentView(R.layout.activity_main);
-
-    Mint.initAndStartSession(this.getApplication(), "8566b133");
-    mDroidNet = DroidNet.getInstance();
-    mDroidNet.addInternetConnectivityListener(this);
-
-    client = new OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).writeTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).build();
-    lstAnime = new ArrayList<>();
-
-
-    spLeaveSubject2 = (Spinner) findViewById(R.id.spLeaveSubject2);
-    customer_info = (EditText) findViewById(R.id.customer_info);
-    spLeaveSubject2.setOnItemSelectedListener(MainActivity.this);
-
-    signin = (Button) findViewById(R.id.signin);
-    imageView4 = (ImageView) findViewById(R.id.imageView4);
-
-
-    imageView4.setOnClickListener(new View.OnClickListener()
-    {
-        @Override
-        public void onClick(View v) {
-
-            LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
-            final View layout = inflater.inflate(R.layout.custom_dialogss, null);
-
-            android.app.AlertDialog.Builder aDialog = new android.app.AlertDialog.Builder(MainActivity.this);
-
-            Button image_landscape = layout.findViewById(R.id.landscape);
-            Button image_portrait = layout.findViewById(R.id.portrait);
-            aDialog.setView(layout);
-            final android.app.AlertDialog ad = aDialog.create();
-            ad.show();
-
-
-            image_landscape.setOnClickListener(new View.OnClickListener() {
+            signin.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
 
-                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-                    setContentView(R.layout.activity_main_portrait);
-                    ad.dismiss();
+                    loginapi_landscape();
+                }
+            });
+
+            retreivebranches2();
+
+        } else {
+
+            //PORTRAIT
+            setContentView(R.layout.activity_main);
+
+            Mint.initAndStartSession(this.getApplication(), "8566b133");
+            mDroidNet = DroidNet.getInstance();
+            mDroidNet.addInternetConnectivityListener(this);
+
+            client = new OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).writeTimeout(10, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).build();
+            lstAnime = new ArrayList<>();
+
+
+            spLeaveSubject2 = (Spinner) findViewById(R.id.spLeaveSubject2);
+            customer_info = (EditText) findViewById(R.id.customer_info);
+            spLeaveSubject2.setOnItemSelectedListener(MainActivity.this);
+
+            signin = (Button) findViewById(R.id.signin);
+            imageView4 = (ImageView) findViewById(R.id.imageView4);
+
+
+            imageView4.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+                    final View layout = inflater.inflate(R.layout.custom_dialogss, null);
+
+                    android.app.AlertDialog.Builder aDialog = new android.app.AlertDialog.Builder(MainActivity.this);
+
+                    Button image_landscape = layout.findViewById(R.id.landscape);
+                    Button image_portrait = layout.findViewById(R.id.portrait);
+                    aDialog.setView(layout);
+                    final android.app.AlertDialog ad = aDialog.create();
+                    ad.show();
+
+
+                    image_landscape.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+
+                            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                            setContentView(R.layout.activity_main_portrait);
+                            ad.dismiss();
+                        }
+                    });
+
+
+                    image_portrait.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+
+                            ad.dismiss();
+                        }
+                    });
+
+
                 }
             });
 
 
-            image_portrait.setOnClickListener(new View.OnClickListener() {
+            signin.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
 
-                    ad.dismiss();
+
+                    loginapiportrait();
                 }
             });
 
-
-
-
-
-
-
-        }
-    });
-
-
-    signin.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-
-
-            loginapiportrait();
-        }
-    });
-
-    retreivebranches2();
-
+            retreivebranches2();
 
 
 //
@@ -276,7 +269,7 @@ else
 //
 //    retreivebranches2();
 
-}
+        }
 
         //            spLeaveSubject2 = (Spinner) findViewById(R.id.spLeaveSubject2);
 //            customer_info = (EditText) findViewById(R.id.customer_info);
@@ -285,16 +278,72 @@ else
 //
 
 
-
-
-
         // code for landscape mode
     }
 
-    private void loginapi_landscape()
-    {
+    private void deviceId() {
+        mTelephonyManager = (TelephonyManager) getSystemService(this.TELEPHONY_SERVICE);
 
-                if (customer_info.getText().toString().equals(""))
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, 101);
+            return;
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
+        switch (requestCode) {
+            case 101:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, 101);
+                        return;
+                    }
+                    imeiNumber = mTelephonyManager.getDeviceId();
+                    Toast.makeText(MainActivity.this,imeiNumber,Toast.LENGTH_LONG).show();
+                    Log.d("IMIEE" , imeiNumber);
+
+                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString("IMEI_NUMBER",imeiNumber);
+                    editor.apply();
+
+                } else {
+                    Toast.makeText(MainActivity.this,"Without permission we check",Toast.LENGTH_LONG).show();
+                }
+                break;
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+
+
+    private void loginapi_landscape() {
+
+
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String name = preferences.getString("IMEI_NUMBER", "");
+        if(!name.equalsIgnoreCase(""))
+        {
+            IMEI = name;  /* Edit the value here*/
+            Log.d("SharefIMEI" , IMEI);
+        }
+
+        if (IMEI.equals(""))
+        {
+//            Toast.makeText(getApplicationContext(), "Unable to Get IMEI or Restriction on Mobile to get IMEI", Toast.LENGTH_LONG).show();
+
+            SweetAlertDialog pDialog = new SweetAlertDialog(MainActivity.this, SweetAlertDialog.ERROR_TYPE);
+            pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
+            pDialog.setTitleText("Unable to Get IMEI");
+            pDialog.setCancelable(true);
+            pDialog.show();
+        }
+
+       else if (customer_info.getText().toString().equals(""))
         {
             SweetAlertDialog pDialog = new SweetAlertDialog(MainActivity.this, SweetAlertDialog.ERROR_TYPE);
             pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
@@ -304,8 +353,12 @@ else
 
         }
 
+
         else
         {
+//            Toast.makeText(this, "IMEI IS:-" + IMEI, Toast.LENGTH_SHORT).show();
+            Log.d("DeviceIMEI", IMEI);
+
             pdialog = Utilss.showSweetLoader(MainActivity.this, SweetAlertDialog.PROGRESS_TYPE, "Submitting...");
             Log.e("Editext_text", customer_info.getText().toString()           + "            " + v11);
 
@@ -314,6 +367,8 @@ else
             try {
                 jsonObject.put("BranchName", v1);
                 jsonObject.put("BranchPin", customer_info.getText().toString());
+                jsonObject.put("IMEI", IMEI);
+
 
                 OkHttpClient client = new OkHttpClient();
                 MediaType JSON = MediaType.parse("application/json; charset=utf-8");

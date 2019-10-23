@@ -31,6 +31,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SnapHelper;
@@ -348,14 +349,26 @@ public class Product_Detail extends BaseActivity implements DroidListener {
             ViewPagerAdapter viewPagerAdapter = new ViewPagerAdapter(Product_Detail.this, items2);
             viewPager.setAdapter(viewPagerAdapter);
 
-            SnapHelper snapHelper = new GravitySnapHelper(Gravity.START);
-            snapHelper.attachToRecyclerView(recyclerView);
+//            SnapHelper snapHelper = new GravitySnapHelper(Gravity.START);
+//            snapHelper.attachToRecyclerView(recyclerView);
+//
+//            recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+//            recyclerView.setHasFixedSize(true);
+//
+//            adapter = new SnapRecyclerAdapter_Details(Product_Detail.this, items);
+//            adapter.setDataList(items);
+//            recyclerView.setAdapter(adapter);
+
+            GridLayoutManager mGridLayoutManager = new GridLayoutManager(Product_Detail.this, 2);
+            int spanCount = 2; // 3 columns
+            int spacing = 0; // 50px
+            boolean includeEdge = true;
+            recyclerView.addItemDecoration(new ItemOffsetDecoration(spanCount, spacing, includeEdge));
+            recyclerView.setLayoutManager(mGridLayoutManager);
+//        recyclerView.setHasFixedSize(true);
 
             recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
             recyclerView.setHasFixedSize(true);
-
-            adapter = new SnapRecyclerAdapter_Details(Product_Detail.this, items);
-            adapter.setDataList(items);
             recyclerView.setAdapter(adapter);
 
 

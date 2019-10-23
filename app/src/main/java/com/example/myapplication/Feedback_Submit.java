@@ -670,7 +670,7 @@ Boolean toggle_state;
         {
             pdialog = Utilss.showSweetLoader(Feedback_Submit.this, SweetAlertDialog.PROGRESS_TYPE, "Submitting...");
 
-            ki = customer_info.getText().totring();
+            ki = customer_info.getText().toString();
             JSONObject level1 = new JSONObject();         // Included object
             try {
 
